@@ -39,7 +39,7 @@ class _AuthScreenState extends State<AuthScreen> {
               SizedBox(
                 height: 125,
                 child: SvgPicture.asset(
-                  '/images/svg/logo.svg',
+                  'images/svg/logo.svg',
                   colorFilter:
                       const ColorFilter.mode(Colors.black, BlendMode.srcIn),
                 ),

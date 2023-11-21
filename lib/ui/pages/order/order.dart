@@ -1,7 +1,7 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'dart:convert';
-import 'dart:async'; // Import the dart:async library
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -17,13 +17,11 @@ class _OrderScreenState extends State<OrderScreen> {
   TextEditingController endXController = TextEditingController();
   TextEditingController endYController = TextEditingController();
 
-  // Add a timer to fetch orders periodically
   late Timer _timer;
 
   @override
   void initState() {
     super.initState();
-    // Start the timer when the widget is created
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       fetchOrders();
     });
@@ -31,7 +29,6 @@ class _OrderScreenState extends State<OrderScreen> {
 
   @override
   void dispose() {
-    // Cancel the timer when the widget is disposed
     _timer.cancel();
     super.dispose();
   }
@@ -129,7 +126,6 @@ class _OrderScreenState extends State<OrderScreen> {
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Text('No open/pending orders available.');
         } else {
-          // Display the list of orders
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: snapshot.data!.map((order) {
@@ -181,7 +177,6 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 
   void createOrder() async {
-    // Implement logic to create a new order
     const String baseUrl = 'http://35.205.19.65:4000/';
     const String endpoint = 'api/orders/create';
 
@@ -190,7 +185,7 @@ class _OrderScreenState extends State<OrderScreen> {
       'start': {'x': 49, 'y': 49},
       'end': {
         'x': int.parse(endXController.text),
-        'y': int.parse(endYController.text)
+        'y': int.parse(endYController.text),
       },
     };
 
@@ -206,12 +201,22 @@ class _OrderScreenState extends State<OrderScreen> {
       );
 
       if (response.statusCode == 200) {
-        print('Order created successfully');
+        endXController.clear();
+        endYController.clear();
+
+        const snackBar = SnackBar(content: Text('Order created successfully'));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       } else {
         print('Failed to create order, ${response.statusCode}');
+        final snackBar = SnackBar(
+            content: Text('Failed to create order: ${response.statusCode}'));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     } catch (e) {
       print('Error during order creation: $e');
+      final snackBar =
+          SnackBar(content: Text('Error during order creation: $e'));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
     } finally {
       client.close();
     }
