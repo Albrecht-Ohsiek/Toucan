@@ -1,50 +1,43 @@
 FROM ubuntu:20.04
 
-ENV DEBIAN_FRONTEND="noninteractive"
-ENV JAVA_VERSION="11"
-ENV FLUTTER_CHANNEL="stable"
-ENV FLUTTER_VERSION="3.0.2"
-ENV GRADLE_VERSION="7.2"
-ENV GRADLE_USER_HOME="/opt/gradle"
-ENV GRADLE_URL="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
-ENV FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_CHANNEL/linux/flutter_linux_$FLUTTER_VERSION-$FLUTTER_CHANNEL.tar.xz"
-ENV FLUTTER_ROOT="/opt/flutter"
-ENV PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/platforms:$FLUTTER_ROOT/bin:$GRADLE_USER_HOME/bin:$PATH"
+# Prerequisites
+RUN apt-get update && \
+    apt-get install -y unzip xz-utils git openssh-client curl && \
+    apt-get upgrade -y && \
+    rm -rf /var/cache/apt
 
-# Install the necessary dependencies.
-RUN apt-get update \
-  && apt-get install --yes --no-install-recommends \
-    openjdk-$JAVA_VERSION-jdk \
-    curl \
-    unzip \
-    sed \
-    git \
-    bash \
-    xz-utils \
-    libglvnd0 \
-    ssh \
-    xauth \
-    x11-xserver-utils \
-    libpulse0 \
-    libxcomposite1 \
-    libgl1-mesa-glx \
-  && rm -rf /var/lib/{apt,dpkg,cache,log}
+# Create a non-root user
+RUN groupadd -r myuser && useradd -r -g myuser myuser
 
-# Install Gradle.
-RUN curl -L $GRADLE_URL -o gradle-$GRADLE_VERSION-bin.zip \
-  && apt-get install -y unzip \
-  && unzip gradle-$GRADLE_VERSION-bin.zip \
-  && mv gradle-$GRADLE_VERSION $GRADLE_USER_HOME \
-  && rm gradle-$GRADLE_VERSION-bin.zip
+# Switch to the non-root user
+USER myuser
 
-# Install Flutter.
-RUN curl -o flutter.tar.xz $FLUTTER_URL \
-  && mkdir -p $FLUTTER_ROOT \
-  && tar xf flutter.tar.xz -C /opt/ \
-  && rm flutter.tar.xz \
-  && git config --global --add safe.directory /opt/flutter \
-  && flutter config --no-analytics \
-  && flutter precache \
-  && yes "y" | flutter doctor --android-licenses \
-  && flutter doctor \
-  && flutter update-packages
+# Set the working directory and ownership
+WORKDIR /opt/web
+COPY --chown=myuser:myuser . .
+
+# Change ownership and permissions of /opt
+USER root
+RUN chown myuser:myuser /opt && chmod 755 /opt
+
+# Switch back to the non-root user
+USER myuser
+
+# Create Flutter directory
+RUN mkdir -p /opt/flutter && chown -R myuser:myuser /opt/flutter
+
+# Install flutter beta
+RUN curl -L https://storage.googleapis.com/flutter_infra/releases/beta/linux/flutter_linux_1.22.0-12.1.pre-beta.tar.xz | tar -C /opt/flutter -xJ
+
+# Add Flutter to the PATH
+ENV PATH="/opt/flutter/bin:${PATH}"
+
+# Enable web capabilities
+RUN flutter config --enable-web && \
+    flutter upgrade && \
+    flutter pub global activate webdev && \
+    flutter doctor
+
+# Cleanup
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
