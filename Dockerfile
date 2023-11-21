@@ -2,11 +2,6 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND="noninteractive"
 ENV JAVA_VERSION="11"
-ENV ANDROID_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip"
-ENV ANDROID_VERSION="29"
-ENV ANDROID_BUILD_TOOLS_VERSION="29.0.3"
-ENV ANDROID_ARCHITECTURE="x86_64"
-ENV ANDROID_SDK_ROOT="/usr/local/android-sdk"
 ENV FLUTTER_CHANNEL="stable"
 ENV FLUTTER_VERSION="3.0.2"
 ENV GRADLE_VERSION="7.2"
@@ -41,20 +36,6 @@ RUN curl -L $GRADLE_URL -o gradle-$GRADLE_VERSION-bin.zip \
   && unzip gradle-$GRADLE_VERSION-bin.zip \
   && mv gradle-$GRADLE_VERSION $GRADLE_USER_HOME \
   && rm gradle-$GRADLE_VERSION-bin.zip
-
-# Install the Android SDK.
-RUN mkdir /root/.android \
-  && touch /root/.android/repositories.cfg \
-  && mkdir -p $ANDROID_SDK_ROOT \
-  && curl -o android_tools.zip $ANDROID_TOOLS_URL \
-  && unzip -qq -d "$ANDROID_SDK_ROOT" android_tools.zip \
-  && rm android_tools.zip \
-  && mv $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/latest \
-  && mkdir -p $ANDROID_SDK_ROOT/cmdline-tools \
-  && mv $ANDROID_SDK_ROOT/latest $ANDROID_SDK_ROOT/cmdline-tools/latest \
-  && yes "y" | sdkmanager "build-tools;$ANDROID_BUILD_TOOLS_VERSION" \
-  && yes "y" | sdkmanager "platforms;android-$ANDROID_VERSION" \
-  && yes "y" | sdkmanager "platform-tools"
 
 # Install Flutter.
 RUN curl -o flutter.tar.xz $FLUTTER_URL \
