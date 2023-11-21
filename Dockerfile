@@ -23,20 +23,26 @@ RUN chown myuser:myuser /opt && chmod 755 /opt
 # Switch back to the non-root user
 USER myuser
 
+# Set HOME environment variable
+ENV HOME /opt/web
+
 # Create Flutter directory
 RUN mkdir -p /opt/flutter && chown -R myuser:myuser /opt/flutter
 
-# Install flutter beta
-RUN curl -L https://storage.googleapis.com/flutter_infra/releases/beta/linux/flutter_linux_1.22.0-12.1.pre-beta.tar.xz | tar -C /opt/flutter -xJ
+# Clone the flutter repo
+RUN git clone https://github.com/flutter/flutter.git /opt/flutter
 
-# Add Flutter to the PATH
-ENV PATH="/opt/flutter/bin:${PATH}"
+# Set flutter path
+ENV PATH="${PATH}:/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin"
 
 # Enable web capabilities
 RUN flutter config --enable-web && \
     flutter upgrade && \
     flutter pub global activate webdev && \
     flutter doctor
+
+# Switch back to root to perform cleanup
+USER root
 
 # Cleanup
 RUN apt-get clean && \
