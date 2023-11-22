@@ -18,6 +18,7 @@ class _OrderScreenState extends State<OrderScreen> {
   TextEditingController endYController = TextEditingController();
 
   late Timer _timer;
+  late String _selectedStatus;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _OrderScreenState extends State<OrderScreen> {
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       fetchOrders();
     });
+    _selectedStatus = "open";
   }
 
   @override
@@ -83,6 +85,23 @@ class _OrderScreenState extends State<OrderScreen> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(height: 20),
+                      ToggleButtons(
+                        isSelected: [
+                          _selectedStatus == 'open',
+                          _selectedStatus == 'pending',
+                        ],
+                        onPressed: (index) {
+                          setState(() {
+                            _selectedStatus = index == 0 ? 'open' : 'pending';
+                          });
+                          fetchOrders(); // Reload orders based on the selected status
+                        },
+                        children: const [
+                          Text('Open'),
+                          Text('Pending'),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       buildOrderList(),
@@ -151,10 +170,13 @@ class _OrderScreenState extends State<OrderScreen> {
     final client = http.Client();
     List<Map<String, dynamic>> allOrders = [];
 
+    final String selectedEndpoint =
+        _selectedStatus == 'open' ? endpoints[0] : endpoints[1];
+
     try {
       for (String endpoint in endpoints) {
         final response = await client.get(
-          Uri.parse('$baseUrl$endpoint'),
+          Uri.parse('$baseUrl$selectedEndpoint'),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -184,8 +206,8 @@ class _OrderScreenState extends State<OrderScreen> {
       'userId': '6559d6fcec0a486f407c7913',
       'start': {'x': 49, 'y': 49},
       'end': {
-        'x': int.parse(endXController.text),
-        'y': int.parse(endYController.text),
+        'x': _clamp(int.parse(endXController.text)),
+        'y': _clamp(int.parse(endYController.text)),
       },
     };
 
@@ -220,5 +242,9 @@ class _OrderScreenState extends State<OrderScreen> {
     } finally {
       client.close();
     }
+  }
+
+  int _clamp(int value, {int min = 1, int max = 99}) {
+    return value.clamp(min, max);
   }
 }
