@@ -28,7 +28,7 @@ RUN flutter config --enable-web
 # Copy files to container and build
 RUN mkdir /app/
 COPY . /app/
-COPY assets/ /app/assets/
+COPY /assets/ /app/assets/
 WORKDIR /app/
 RUN flutter build web
 
