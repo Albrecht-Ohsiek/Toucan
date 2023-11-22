@@ -13,7 +13,7 @@ ENV FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
 
 # download Flutter SDK from Flutter Github repo
 # RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
-COPY --from=build-env /usr/local/flutter /usr/local/flutter
+COPY . /usr/local/flutter
 
 # Set flutter environment path
 ENV PATH="${PATH}:/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin"
@@ -30,16 +30,16 @@ RUN flutter config --enable-web
 # Stage 2: Build the Flutter web application
 FROM build-env as builder
 
-RUN mkdir /app/
-COPY . /app/
-WORKDIR /app/
+WORKDIR /usr/local/app/
+COPY . .
+
 RUN flutter build web
 
 # Stage 3: Create the final image
 FROM nginx:1.21.1-alpine
 
-COPY --from=builder /app/build/web /usr/share/nginx/html
+COPY --from=builder /usr/local/app/build/web /usr/share/nginx/html
 
 # make server startup script executable and start the web server
-RUN ["chmod", "+x", "/app/server/server.sh"]
-ENTRYPOINT [ "/app/server/server.sh"]
+RUN ["chmod", "+x", "/usr/local/app/server/server.sh"]
+ENTRYPOINT [ "/usr/local/app/server/server.sh"]
