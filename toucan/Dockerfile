@@ -1,10 +1,10 @@
 # Install Operating system and dependencies
-FROM ubuntu:20.04
+FROM debian:latest AS build-env
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update 
-RUN apt-get install -y curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-mesa fonts-droid-fallback python3
+RUN apt-get install -y curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-mesa fonts-droid-fallback lib32stdc++6 python3 sed
 RUN apt-get clean
 
 ENV DEBIAN_FRONTEND=dialog
@@ -15,10 +15,10 @@ ENV FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
 RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
 
 # Set flutter environment path
-ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+ENV PATH="${PATH}:/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin"
 
 # Run flutter doctor
-RUN flutter doctor
+RUN flutter doctor -v
 
 # Enable flutter web
 RUN flutter channel master
@@ -32,9 +32,9 @@ WORKDIR /app/
 RUN flutter build web
 
 # Record the exposed port
-EXPOSE 9000
+FROM nginx:1.21.1-alpine
+COPY --from=build-env /app/build/web /usr/share/nginx/html
 
 # make server startup script executable and start the web server
 RUN ["chmod", "+x", "/app/server/server.sh"]
-
 ENTRYPOINT [ "/app/server/server.sh"]
