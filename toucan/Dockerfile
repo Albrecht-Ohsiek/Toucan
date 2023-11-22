@@ -25,6 +25,10 @@ RUN flutter channel master
 RUN flutter upgrade
 RUN flutter config --enable-web
 
+# Create a non-root user
+RUN useradd -m developer
+USER developer
+
 # Copy files to container and build
 RUN mkdir /app/
 COPY . /app/
