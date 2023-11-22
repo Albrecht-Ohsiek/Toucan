@@ -30,7 +30,7 @@ jobs:
             project_id: ${{ env.PROJECT_ID }}
     
         - name: Build Docker Image
-          run: docker build -t ${{ env.IMAGE_NAME }}:latest .
+          run: docker build -t ${{ env.IMAGE_NAME }}:latest -f toucan/Dockerfile .
 
         - name: Automatic Tagging of Releases
           id: increment-git-tag
